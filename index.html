@@ -488,37 +488,62 @@ function show(id) { ge(id).style.display='block'; }
 function hide(id) { ge(id).style.display='none'; }
 function flex(id) { ge(id).style.display='flex'; }
 
-var GS_URL = 'https://script.google.com/macros/s/AKfycbxiCJJ5LQyHHFg7HRnkLkKEjTkOblOrtWOAS0xpaHgKV-7GDXBzHcinGD9x6hnmihjW/exec';
+var SB_URL = 'https://hseluvpwqjgallfyzori.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzZWx1dnB3cWpnYWxsZnl6b3JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MjIxNjgsImV4cCI6MjA5MTI5ODE2OH0.hZ57PMADQPaqISd5ugWozVDQQHiR61aoPSQp1-mP-6s';
 var _saving = false;
+var _pendingSave = null;
 
 function saveData() {
   var d = JSON.stringify({alumnos:alumnos,nextId:nextId,tlIdx:tlIdx,reportes:reportes,cfg:cfg});
   try { localStorage.setItem('lv10', d); } catch(e) {}
-  if(_saving) return;
-  _saving = true;
-  fetch(GS_URL, {
-    method: 'POST',
-    headers: {'Content-Type': 'text/plain'},
-    body: JSON.stringify({action:'save', data:d})
-  }).then(function(){_saving=false;}).catch(function(){_saving=false;});
+  if(_saving){_pendingSave=d;return;}
+  _saving=true;_pendingSave=null;
+  fetch(SB_URL+'/rest/v1/appdata?id=eq.1&select=value',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    var merged=d;
+    if(rows&&rows.length>0&&rows[0].value){
+      try{
+        var remote=JSON.parse(rows[0].value);
+        var local=JSON.parse(d);
+        var localMap={};(local.alumnos||[]).forEach(function(a){localMap[a.id]=a;});
+        var remoteIds={};
+        var mergedAlumnos=(remote.alumnos||[]).map(function(a){remoteIds[a.id]=true;return localMap[a.id]||a;});
+        (local.alumnos||[]).forEach(function(a){if(!remoteIds[a.id])mergedAlumnos.push(a);});
+        var remoteReps={};(remote.reportes||[]).forEach(function(r){remoteReps[r.ts||(r.fecha+r.quien)]=true;});
+        var mergedReps=(remote.reportes||[]).slice();
+        (local.reportes||[]).forEach(function(r){if(!remoteReps[r.ts||(r.fecha+r.quien)])mergedReps.push(r);});
+        var obj={alumnos:mergedAlumnos,nextId:Math.max(local.nextId||1,remote.nextId||1),tlIdx:local.tlIdx||0,reportes:mergedReps,cfg:local.cfg};
+        merged=JSON.stringify(obj);alumnos=obj.alumnos;nextId=obj.nextId;reportes=obj.reportes;
+        try{localStorage.setItem('lv10',merged);}catch(e){}
+      }catch(e){merged=d;}
+    }
+    return fetch(SB_URL+'/rest/v1/appdata?id=eq.1',{method:'PATCH',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},body:JSON.stringify({value:merged})})
+    .then(function(r){
+      if(r.status===404||r.status===0)
+        fetch(SB_URL+'/rest/v1/appdata',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},body:JSON.stringify({id:1,value:merged})});
+    });
+  })
+  .catch(function(){
+    fetch(SB_URL+'/rest/v1/appdata?id=eq.1',{method:'PATCH',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},body:JSON.stringify({value:d})}).catch(function(){});
+  })
+  .then(function(){_saving=false;if(_pendingSave){var ps=_pendingSave;_pendingSave=null;saveData();}});
 }
 
 function loadData() {
   var local = null;
   try { local = localStorage.getItem('lv10'); } catch(e) {}
-  fetch(GS_URL + '?action=load')
-    .then(function(r){return r.json();})
-    .then(function(r){
-      if(r && r.data) {
-        parseAndInit(r.data);
-        try { localStorage.setItem('lv10', r.data); } catch(e) {}
-      } else {
-        parseAndInit(local);
-      }
-    })
-    .catch(function(){
+  fetch(SB_URL+'/rest/v1/appdata?id=eq.1&select=value',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    if(rows&&rows.length>0&&rows[0].value){
+      parseAndInit(rows[0].value);
+      try{localStorage.setItem('lv10',rows[0].value);}catch(e){}
+    } else {
       parseAndInit(local);
-    });
+    }
+  })
+  .catch(function(){parseAndInit(local);});
 }
 
 function parseAndInit(d) {
