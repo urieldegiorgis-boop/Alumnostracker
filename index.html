@@ -923,7 +923,7 @@ function renderCal() {
   for(var d=1;d<=dim;d++){
     var dt=yr+'-'+(mo<10?'0':'')+mo+'-'+(d<10?'0':'')+d;
     var dw=new Date(yr,mo-1,d).getDay(),we=dw===0||dw===6,fut=dt>ts,hd=dt===ts,rep=md[dt];
-    var cls='cday';if(hd)cls+=' hoy';if(we||fut)cls+=' fut';else if(rep)cls+=' ok';else cls+=' ko';
+   var cls='cday';if(hd)cls+=' hoy';if(fut)cls+=' fut';else if(rep)cls+=' ok';else cls+=' ko';
     h+='<div class="'+cls+'"><div style="font-size:12px;font-weight:500;">'+d+'</div>'+(rep?'V':!we&&!fut?'-':'')+'</div>';
   }
   grid.innerHTML=h;
