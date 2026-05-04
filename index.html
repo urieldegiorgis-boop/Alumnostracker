@@ -818,7 +818,7 @@ function addAcc() {
   var fase=ge('hfase').value, nota=ge('hnota').value.trim();
   if(!nota){alert('Escribe una nota.');return;}
   var estado=ge('hest').value, resp;
-  if(fase==='teamleader'){resp=nTL();tlIdx++;}else resp=ge('hresp').value;
+  if(fase==='teamleader'){resp=nTL();tlIdx++;}else{resp=a.tlAsignado||ge('hresp').value;}
   if(!a.historial) a.historial=[];
   a.historial.push({fecha:td(),fase:fase,resp:resp,nota:nota});
   a.fase=fase; a.responsable=resp; a.nota=nota; a.estado=estado;
