@@ -508,8 +508,8 @@ function saveData() {
         var local=JSON.parse(d);
         var localMap={};(local.alumnos||[]).forEach(function(a){localMap[a.id]=a;});
         var remoteIds={};
-        var mergedAlumnos=(local.alumnos||[]);
-        var remoteReps={};(remote.reportes||[]).forEach(function(r){remoteReps[r.ts||(r.fecha+r.quien)]=true;});
+        var mergedAlumnos=(remote.alumnos||[]).map(function(a){return localMap[a.id]||a;});
+        (local.alumnos||[]).forEach(function(a){if(!remoteIds[a.id])mergedAlumnos.push(a);});
         var mergedReps=(remote.reportes||[]).slice();
         (local.reportes||[]).forEach(function(r){if(!remoteReps[r.ts||(r.fecha+r.quien)])mergedReps.push(r);});
         var obj={alumnos:mergedAlumnos,nextId:Math.max(local.nextId||1,remote.nextId||1),tlIdx:local.tlIdx||0,reportes:mergedReps,cfg:local.cfg};
