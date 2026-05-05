@@ -827,8 +827,8 @@ function addAcc() {
 
 function delA() {
   if(!histId||!confirm('Eliminar este alumno?')) return;
-  alumnos=alumnos.filter(function(a){return a.id!==histId;});
-  saveData(); hide('mhist'); render();
+  alumnos=alumnos.filter(function(a){return String(a.id)!==String(histId);});
+histId=null; saveData(); hide('mhist'); render();
 }
 
 function onQuien() {
