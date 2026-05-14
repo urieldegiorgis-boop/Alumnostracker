@@ -508,6 +508,7 @@ function saveData() {
         var local=JSON.parse(d);
         var localMap={};(local.alumnos||[]).forEach(function(a){localMap[a.id]=a;});
         var remoteIds={};
+        (remote.alumnos||[]).forEach(function(a){remoteIds[a.id]=true;});
         var mergedAlumnos=(remote.alumnos||[]).map(function(a){return localMap[a.id]||a;});
         (local.alumnos||[]).forEach(function(a){if(!remoteIds[a.id])mergedAlumnos.push(a);});
         var mergedReps=(remote.reportes||[]).slice();
